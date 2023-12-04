@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cassert>
 #include <deque>
 #include <fstream>
@@ -24,7 +23,7 @@ int main(int argc, char* argv[])
    assert(argc == 2);
    std::ifstream file(argv[1]);
 
-   std::deque<size_t> lookahead;
+   std::deque<int> lookahead;
    size_t sum = 0;
    size_t total_cards = 0;
    const boost::regex regexp{R"(Card +(\d+):(?: +(\d+))+ \|(?: +(\d+))+)"};
@@ -61,8 +60,8 @@ int main(int argc, char* argv[])
       total_cards += copies;
 
       // apply 'copies' to the next 'matches.size()' cards via lookahead
-      while (lookahead.size() < matches)
-         lookahead.emplace_back();
+      if (lookahead.size() < matches)
+         lookahead.resize(matches);
 
       for (auto [extra, _] : zip(lookahead, iota(0, matches)))
          extra += copies;
