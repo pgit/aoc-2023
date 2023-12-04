@@ -4,10 +4,12 @@
 #include <fstream>
 #include <string>
 
+#include <range/v3/algorithm/count_if.hpp>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
+using namespace ranges;
 using namespace ranges::views;
 
 #define BOOST_REGEX_MATCH_EXTRA
@@ -35,41 +37,38 @@ int main(int argc, char* argv[])
       // parse
       //
       int card_number = std::stoi(what[1].str());
-      auto winning_numbers = what[2].captures() | to_number | ranges::to<std::set>;
-      auto my_numbers = what[3].captures() | to_number | ranges::to<std::set>;
+      auto winning_numbers = what[2].captures() | to_number | to<std::set>;
+      auto my_numbers = what[3].captures() | to_number | to<std::set>;
 
       //
       // part a: number of matches == set intersection size
       //
-      std::vector<decltype(winning_numbers)::value_type> matches;
-      std::ranges::set_intersection(winning_numbers, my_numbers, std::back_inserter(matches));
-
-      if (!matches.empty())
-         sum += 1 << (matches.size() - 1);
+      int matches = count_if(my_numbers, [&](auto n) { return winning_numbers.contains(n); });
+      if (matches)
+         sum += 1 << (matches - 1);
 
       //
       // part b: apply copies stored in look-ahead deque
       //
-      total_cards++;
-
       // numbers of copies of the current card
-      size_t copies = 1;
+      int copies = 1;
       if (!lookahead.empty())
       {
-         total_cards += lookahead.front();
          copies += lookahead.front();
          lookahead.pop_front();
       }
 
+      total_cards += copies;
+
       // apply 'copies' to the next 'matches.size()' cards via lookahead
-      while (lookahead.size() < matches.size())
+      while (lookahead.size() < matches)
          lookahead.emplace_back();
 
-      for (auto [extra, _] : zip(lookahead, iota(0ul, matches.size())))
+      for (auto [extra, _] : zip(lookahead, iota(0, matches)))
          extra += copies;
 
-      fmt::println("Card {}: {} matches, {} copies, lookahead=[{}]", card_number, matches.size(),
-                   copies, fmt::join(lookahead, ", "));
+      fmt::println("Card {}: {} matches, {} copies, lookahead=[{}]", card_number, matches, copies,
+                   fmt::join(lookahead, ", "));
    }
 
    fmt::println("solution: {} total cards: {}", sum, total_cards);
