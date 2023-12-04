@@ -15,17 +15,6 @@ using namespace ranges::views;
 
 #include <fmt/ostream.h>
 
-constexpr bool is_symbol(char c) { return c != '.' && !isdigit(c); }
-
-const char* getn(const char* p)
-{
-   if (!isdigit(*p))
-      return nullptr;
-   while (isdigit(*--p))
-      ;
-   return p + 1;
-}
-
 constexpr auto to_number = transform([](auto s) { return std::stoi(s.str()); });
 
 int main(int argc, char* argv[])
