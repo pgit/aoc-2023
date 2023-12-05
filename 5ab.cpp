@@ -7,6 +7,8 @@
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/drop.hpp>
 #include <range/v3/view/iota.hpp>
+#include <range/v3/view/stride.hpp>
+#include <range/v3/view/take.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
 using namespace ranges;
@@ -21,17 +23,28 @@ constexpr auto to_number = transform([](auto s) { return std::stol(s.str()); });
 
 struct Range
 {
-   long dest;
-   long size;
+   long start;
+   long end;
+
+   long size() const
+   {
+      assert(end >= start);
+      return end - start;
+   }
+
+   Range shift(long delta) const { return Range{start + delta, end + delta}; }
+
+   auto operator<=>(const Range& other) const noexcept { return end <=> other.end; }
+   auto operator<=>(long other_end) const noexcept { return end <=> other_end; }
 };
 
 struct Map
 {
    std::string from;
    std::string to;
-   
+
    // maps a+x to [b,x] for [a,a+x] -> [b,b+x] (lookup by end of source range)
-   std::map<long, Range> ranges; 
+   std::map<Range, Range, std::less<>> ranges;
 };
 
 int main(int argc, char* argv[])
@@ -69,32 +82,68 @@ int main(int argc, char* argv[])
       {
          fmt::println("{}", line);
          boost::regex_match(line, what, map_entry_regexp, boost::match_perl);
-         auto n = what | drop(1) | to_number | to<std::vector>;
-         map.ranges.emplace(n[1] + n[2] /* end of source range */, Range(n[0], n[2]));
+         auto n = what | drop(1) | to_number | to<std::vector>; // dest, source, size
+
+         map.ranges.emplace(Range{n[1], n[1] + n[2]}, Range{n[0], n[0] + n[2]});
       }
    }
 
-   auto maxSeed = std::numeric_limits<long>::max();
-   for (auto seed : seeds)
+   auto minSeed = std::numeric_limits<long>::max();
+   std::function<void(int, Range)> recurse = [&](int level, Range seed_range)
    {
-      fmt::print("seed {}:", seed);
-      for (auto& map : maps)
+      if (seed_range.start >= seed_range.end)
+         return;
+
+      if (level == maps.size())
       {
-         auto it = map.ranges.lower_bound(seed);
-         if (it != map.ranges.end() && seed > it->first - it->second.size)
-         {
-            auto delta = it->second.dest - it->first + it->second.size;
-            seed += delta;
-            fmt::print(" [{}]", delta);
-         }
-         else
-            fmt::print(" []");
-         fmt::print(" {}", seed);
+         minSeed = std::min(minSeed, seed_range.start);
+         return;
       }
-      fmt::println("");
 
-      maxSeed = std::min(maxSeed, seed);
-   }
+      auto it = maps[level].ranges.begin();
+      while (it != maps[level].ranges.end() && it->first.end < seed_range.start)
+         ++it;
 
-   fmt::println("minSeed: {}", maxSeed);
+      recurse(level + 1, Range{seed_range.start, std::min(it->first.start, seed_range.end)});
+
+      long last_end = seed_range.start;
+      if (it != maps[level].ranges.end())
+         last_end = it->first.end;
+
+      for (; it != maps[level].ranges.end() && it->first.start < seed_range.end; ++it)
+      {
+         auto range = it->first;
+         long delta = it->second.start - it->first.start;
+
+         recurse(level + 1, Range{last_end, std::max(range.start, seed_range.start)});
+         last_end = range.end;
+
+         recurse(level + 1,
+                 Range{std::max(range.start, seed_range.start), std::min(range.end, seed_range.end)}
+                    .shift(delta));
+      }
+
+      recurse(level + 1, Range{last_end, seed_range.end});
+   };
+
+   //
+   // part A
+   //
+   for (auto range : seeds | transform([](auto seed) -> Range { return {seed, seed+1}; }))
+      recurse(0, range);
+
+   fmt::println("part A: {}", minSeed);
+
+   //
+   // part B
+   //
+   minSeed = std::numeric_limits<long>::max();
+   for (auto range : zip(seeds | stride(2), seeds | drop(1) | stride(2)) |
+                        transform(
+                           [](auto pair) -> Range {
+                              return {pair.first, pair.first + pair.second};
+                           }))
+      recurse(0, range);
+
+   fmt::println("part B: {}", minSeed);
 }

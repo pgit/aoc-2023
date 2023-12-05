@@ -1,11 +1,11 @@
-seeds: 1 2 3 2000
+seeds: 0 100
 
 seed-to-soil map:
-100 0 10
-200 10 10
+9999 0 1
+1010 10 10
+2020 20 10
+3030 30 10
+5050 50 10
 
-soil-to-fertilizer map:
-1 0 1000
-
-fertilizer-to-location map:
-0 1 102
+soil-to-location map:
+0 1000 100
