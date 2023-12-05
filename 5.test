@@ -1,0 +1,11 @@
+seeds: 1 2 3 2000
+
+seed-to-soil map:
+100 0 10
+200 10 10
+
+soil-to-fertilizer map:
+1 0 1000
+
+fertilizer-to-location map:
+0 1 102
