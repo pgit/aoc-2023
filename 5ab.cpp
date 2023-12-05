@@ -26,15 +26,10 @@ struct Range
    long start;
    long end;
 
-   long size() const
-   {
-      assert(end >= start);
-      return end - start;
-   }
-
-   Range shift(long delta) const { return Range{start + delta, end + delta}; }
+   Range operator+(long delta) const { return Range{start + delta, end + delta}; }
 
    auto operator<=>(const Range& other) const noexcept { return end <=> other.end; }
+   // allow heterogenous lookup for end of source range, for use with lower_bound()
    auto operator<=>(long other_end) const noexcept { return end <=> other_end; }
 };
 
@@ -43,7 +38,7 @@ struct Map
    std::string from;
    std::string to;
 
-   // maps a+x to [b,x] for [a,a+x] -> [b,b+x] (lookup by end of source range)
+   // maps source ranges to destination ranges, with heterogenous lookup for end of source range
    std::map<Range, Range, std::less<>> ranges;
 };
 
@@ -88,62 +83,60 @@ int main(int argc, char* argv[])
       }
    }
 
-   auto minSeed = std::numeric_limits<long>::max();
-   std::function<void(int, Range)> recurse = [&](int level, Range seed_range)
+   std::function<void(int, Range, long&)> recurse = [&](int level, Range seed, long& minimum)
    {
-      if (seed_range.start >= seed_range.end)
+      if (seed.start >= seed.end)
          return;
 
       if (level == maps.size())
       {
-         minSeed = std::min(minSeed, seed_range.start);
+         minimum = std::min(minimum, seed.start);
          return;
       }
 
-      auto it = maps[level].ranges.begin();
-      while (it != maps[level].ranges.end() && it->first.end < seed_range.start)
-         ++it;
+      //
+      // seed:          [-----------[
+      // ranges: [-A-[    [-C-[   [-D-[    [-E-[
+      // output         [0|-1-|-2-|3[
+      //
 
-      recurse(level + 1, Range{seed_range.start, std::min(it->first.start, seed_range.end)});
+      // skip A
+      auto it = maps[level].ranges.lower_bound(seed.start);
 
-      long last_end = seed_range.start;
-      if (it != maps[level].ranges.end())
-         last_end = it->first.end;
-
-      for (; it != maps[level].ranges.end() && it->first.start < seed_range.end; ++it)
+      // emit B, and then as many C as are completely covered
+      Range range{0, it == maps[level].ranges.end() ? seed.start : it->first.end};
+      for (; it != maps[level].ranges.end() && it->first.start < seed.end; ++it)
       {
-         auto range = it->first;
-         long delta = it->second.start - it->first.start;
+         range = Range{range.end, std::max(it->first.start, seed.start)};
+         recurse(level + 1, range, minimum);
 
-         recurse(level + 1, Range{last_end, std::max(range.start, seed_range.start)});
-         last_end = range.end;
-
-         recurse(level + 1,
-                 Range{std::max(range.start, seed_range.start), std::min(range.end, seed_range.end)}
-                    .shift(delta));
+         range = Range{range.end, std::min(it->first.end, seed.end)};
+         recurse(level + 1, range + (it->second.start - it->first.start), minimum);
       }
 
-      recurse(level + 1, Range{last_end, seed_range.end});
+      // emit D
+      recurse(level + 1, Range{range.end, seed.end}, minimum);
    };
 
    //
-   // part A
+   // part A, which is just a subset of part B with fixed intervals of size 1
    //
-   for (auto range : seeds | transform([](auto seed) -> Range { return {seed, seed+1}; }))
-      recurse(0, range);
+   auto A = std::numeric_limits<long>::max();
+   for (auto range : seeds | transform([](auto seed) -> Range { return {seed, seed + 1}; }))
+      recurse(0, range, A);
 
-   fmt::println("part A: {}", minSeed);
+   fmt::println("part A: {}", A);
 
    //
    // part B
    //
-   minSeed = std::numeric_limits<long>::max();
+   auto B = std::numeric_limits<long>::max();
    for (auto range : zip(seeds | stride(2), seeds | drop(1) | stride(2)) |
                         transform(
                            [](auto pair) -> Range {
                               return {pair.first, pair.first + pair.second};
                            }))
-      recurse(0, range);
+      recurse(0, range, B);
 
-   fmt::println("part B: {}", minSeed);
+   fmt::println("part B: {}", B);
 }
