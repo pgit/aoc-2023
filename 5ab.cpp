@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
    auto seeds = what[1].captures() | to_number | to<std::vector>;
    fmt::println("seeds: [{}]", fmt::join(seeds, ", "));
 
-   std::vector<Map> maps;
+   std::vector<Map> process;
 
    std::getline(file, line);
    const boost::regex category_regexp{R"((\w+)-to-(\w+) map:)"};
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
       auto to_category = what[2].str();
       fmt::println("{} to {}:", from_category, to_category);
 
-      auto& map = maps.emplace_back(what[1].str(), what[2].str());
+      auto& map = process.emplace_back(what[1].str(), what[2].str());
 
       for (std::getline(file, line); !line.empty(); std::getline(file, line))
       {
@@ -83,12 +83,12 @@ int main(int argc, char* argv[])
       }
    }
 
-   std::function<void(int, Range, long&)> recurse = [&](int level, Range seed, long& minimum)
+   std::function<void(int, Range, long&)> recurse = [&](int step, Range seed, long& minimum)
    {
       if (seed.start >= seed.end)
          return;
 
-      if (level == maps.size())
+      if (step == process.size())
       {
          minimum = std::min(minimum, seed.start);
          return;
@@ -101,21 +101,21 @@ int main(int argc, char* argv[])
       //
 
       // skip A
-      auto it = maps[level].ranges.lower_bound(seed.start);
+      auto it = process[step].ranges.lower_bound(seed.start);
 
       // emit B, and then as many C as are completely covered
-      Range range{0, it == maps[level].ranges.end() ? seed.start : it->first.end};
-      for (; it != maps[level].ranges.end() && it->first.start < seed.end; ++it)
+      Range range{0, it == process[step].ranges.end() ? seed.start : it->first.end};
+      for (; it != process[step].ranges.end() && it->first.start < seed.end; ++it)
       {
          range = Range{range.end, std::max(it->first.start, seed.start)};
-         recurse(level + 1, range, minimum);
+         recurse(step + 1, range, minimum);
 
          range = Range{range.end, std::min(it->first.end, seed.end)};
-         recurse(level + 1, range + (it->second.start - it->first.start), minimum);
+         recurse(step + 1, range + (it->second.start - it->first.start), minimum);
       }
 
       // emit D
-      recurse(level + 1, Range{range.end, seed.end}, minimum);
+      recurse(step + 1, Range{range.end, seed.end}, minimum);
    };
 
    //
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
    //
    // part B
    //
-   auto B = std::numeric_limits<long>::max();
+   long B = std::numeric_limits<long>::max();
    for (auto range : zip(seeds | stride(2), seeds | drop(1) | stride(2)) |
                         transform(
                            [](auto pair) -> Range {
