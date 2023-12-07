@@ -1,5 +1,4 @@
 #include <cassert>
-#include <cmath>
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -20,12 +19,13 @@ using namespace ranges::views;
 
 #include <fmt/ostream.h>
 
-constexpr auto to_number = transform([](auto s) { return std::stol(s.str()); });
-constexpr auto to_value = transform([](auto s) { return "23456789TJQKA"sv.find(s.str()[0]); });
-constexpr auto to_valueA = transform([](auto c) { return "..23456789TJQKA"sv.find(c); });
-constexpr auto to_valueB = transform([](auto c) { return "J.23456789T.QKA"sv.find(c); });
+// '2' => 2, ..., 'T' => 10, ...
+constexpr auto to_valueA = transform([](auto c) -> int { return "..23456789TJQKA"sv.find(c); });
 
-enum class Type : size_t
+// 'J' => 0, '2' => 2, ...
+constexpr auto to_valueB = transform([](auto c) -> int { return "J.23456789T.QKA"sv.find(c); });
+
+enum class Type : int
 {
    five_of_a_kind = 7,
    four_of_a_kind = 6,
@@ -36,110 +36,48 @@ enum class Type : size_t
    high_card = 1
 };
 
-struct CardInfo
-{
-   size_t card;
-   long count = 0;
-};
-
 struct Hand
 {
-   Hand(std::string handString_, long bid_)
-      : handString(std::move(handString_)), bid(bid_),
-        hand(handString | to_valueA | to<std::vector>()),
-        handB(handString | to_valueB | to<std::vector>()), //
-        histA(hand | to<std::set>),
-        histB(handB | filter([](auto c) { return c != 0; }) | to<std::set>), //
-        infosA(computeInfos(histA)),
-        infosB(computeInfos(histB)),
-        typeA(computeType()), typeB(computeTypeWithJokers())
+   Hand(std::string handString_, std::vector<int> hand_, long bid_)
+      : handString(std::move(handString_)), hand(std::move(hand_)), bid(bid_), type(computeType())
    {
    }
 
    const std::string handString;
+   const std::vector<int> hand;
    const long bid = 0;
-
-   const std::vector<size_t> hand;
-   const std::vector<size_t> handB;
-
-   const std::set<size_t> histA;
-   const std::set<size_t> histB;
-   const std::vector<CardInfo> infosA;
-   const std::vector<CardInfo> infosB;
-   const Type typeA;
-   const Type typeB;
+   const Type type;
 
    constexpr auto operator<=>(const Hand& r) const noexcept
    {
-      auto& l = *this;
-      return std::tie(l.typeA, l.hand[0], l.hand[1], l.hand[2], l.hand[3], l.hand[4]) <=>
-             std::tie(r.typeA, r.hand[0], r.hand[1], r.hand[2], r.hand[3], r.hand[4]);
-   }
-
-   constexpr bool lessB(const Hand& r) const noexcept
-   {
-      auto& l = *this;
-      return std::tie(l.typeB, l.handB[0], l.handB[1], l.handB[2], l.handB[3], l.handB[4]) <
-             std::tie(r.typeB, r.handB[0], r.handB[1], r.handB[2], r.handB[3], r.handB[4]);
+      return std::tie(type, hand) <=> std::tie(r.type, r.hand);
    }
 
 private:
-   std::vector<CardInfo> computeInfos(const std::set<size_t>& hist)
-   {
-      auto infos = hist |
-                   transform(
-                      [&](size_t card) {
-                         return CardInfo{card, count(hand, card)};
-                      }) |
-                   to<std::vector>;
-      sort(infos, std::less<>(), &CardInfo::count);
-      return infos;
-   }
-
    Type computeType()
    {
-      if (histA.size() == 1)
-         return Type::five_of_a_kind; // 5
-      else if (histA.size() == 2)
-      {
-         if (infosA[1].count == 4)
-            return Type::four_of_a_kind; // 1, 4
-         else
-            return Type::full_house; // 2, 3
-      }
-      else if (histA.size() == 3)
-      {
-         if (infosA[2].count == 3)
-            return Type::three_of_a_kind; // 1, 1, 3
-         else
-            return Type::two_pair; // 1, 2, 2
-      }
-      else if (histA.size() == 4)
-         return Type::one_pair; // 1, 1, 1, 2
-      else
-         return Type::high_card; // 1, 1, 1, 1, 1
-   }
+      auto hist = hand | filter([](auto c) { return c != 0; }) | to<std::set>;
+      auto infos = hist | transform([&](int card) { return count(hand, card); }) | to<std::vector>;
+      sort(infos);
+      auto jokers = count(hand, 0);
 
-   Type computeTypeWithJokers()
-   {
-      auto jokers = count(handB, 0);
-      if (histB.size() <= 1)  // may also be all jokers
+      if (hist.size() <= 1) // may also be all jokers
          return Type::five_of_a_kind; // 5
-      else if (histB.size() == 2)
+      else if (hist.size() == 2)
       {
-         if (infosB[1].count + jokers == 4)
+         if (infos[1] + jokers == 4)
             return Type::four_of_a_kind; // 1, 4
          else
             return Type::full_house; // 2, 3
       }
-      else if (histB.size() == 3)
+      else if (hist.size() == 3)
       {
-         if (infosB[2].count + jokers == 3)
+         if (infos[2] + jokers == 3)
             return Type::three_of_a_kind; // 1, 1, 3
          else
             return Type::two_pair; // 1, 2, 2
       }
-      else if (histB.size() == 4)
+      else if (hist.size() == 4)
          return Type::one_pair; // 1, 1, 1, 2
       else
          return Type::high_card; // 1, 1, 1, 1, 1
@@ -151,7 +89,8 @@ int main(int argc, char* argv[])
    assert(argc == 2);
    std::ifstream file(argv[1]);
 
-   std::vector<std::unique_ptr<Hand>> hands;
+   std::vector<std::unique_ptr<Hand>> handsA;
+   std::vector<std::unique_ptr<Hand>> handsB;
 
    std::string line;
    while (std::getline(file, line))
@@ -159,36 +98,33 @@ int main(int argc, char* argv[])
       boost::smatch what;
       static const boost::regex regexp{R"((\w+) (\d+))"};
       boost::regex_match(line, what, regexp, boost::match_extra | boost::match_perl);
-      hands.emplace_back(std::make_unique<Hand>(what[1].str(), std::stol(what[2])));
+      auto hand = what[1].str();
+      auto bid = std::stol(what[2]);
+      handsA.emplace_back(std::make_unique<Hand>(hand, hand | to_valueA | to<std::vector>(), bid));
+      handsB.emplace_back(std::make_unique<Hand>(hand, hand | to_valueB | to<std::vector>(), bid));
    }
+
+   auto doit = [](std::vector<std::unique_ptr<Hand>>& hands)
+   {
+      std::ranges::sort(hands, [](auto& a, auto& b) { return *a < *b; });
+
+      for (auto& hand : hands)
+         fmt::println("{} {} [{}] type={}", hand->handString, hand->bid,
+                      fmt::join(hand->hand, ", "), size_t(hand->type));
+
+      int result = 0;
+      for (auto [hand, rank] : zip(hands, iota(1)))
+         result += hand->bid * rank;
+      return result;
+   };
 
    //
    // part A
    //
-   std::ranges::sort(hands, [](auto& a, auto& b) { return *a < *b; });
-
-   for (auto& hand : hands)
-      fmt::println("{} {} [{}] type={}", hand->handString, hand->bid, fmt::join(hand->hand, ", "),
-                   size_t(hand->typeA));
-
-   size_t A = 0;
-   for (auto [hand, rank] : zip(hands, iota(1)))
-      A += hand->bid * rank;
-
-   fmt::println("A={}", A);
+   fmt::println("A={}", doit(handsA));
 
    //
    // part B
    //
-   std::ranges::sort(hands, [](auto& a, auto& b) { return a->lessB(*b); });
-
-   for (auto& hand : hands)
-      fmt::println("{} {} [{}] type={} hist=[{}]", hand->handString, hand->bid, fmt::join(hand->hand, ", "),
-                   size_t(hand->typeB), fmt::join(hand->histB, ", "));
-
-   size_t B = 0;
-   for (auto [hand, rank] : zip(hands, iota(1)))
-      B += hand->bid * rank;
-
-   fmt::println("B={}", B);
+   fmt::println("B={}", doit(handsB));
 }
