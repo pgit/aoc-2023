@@ -25,15 +25,16 @@ constexpr auto to_valueA = transform([](auto c) -> int { return "..23456789TJQKA
 // 'J' => 0, '2' => 2, ...
 constexpr auto to_valueB = transform([](auto c) -> int { return "J.23456789T.QKA"sv.find(c); });
 
+// type enum, lowest score first
 enum class Type : int
 {
-   five_of_a_kind = 7,
-   four_of_a_kind = 6,
-   full_house = 5,
-   three_of_a_kind = 4,
-   two_pair = 3,
-   one_pair = 2,
-   high_card = 1
+   high_card,
+   one_pair,
+   two_pair,
+   three_of_a_kind,
+   full_house,
+   four_of_a_kind,
+   five_of_a_kind
 };
 
 struct Hand
@@ -43,10 +44,10 @@ struct Hand
    {
    }
 
-   const std::string handString;
-   const std::vector<int> hand;
-   const long bid = 0;
-   const Type type;
+   const std::string handString; // A2JAQ
+   const std::vector<int> hand; // [14, 2, 0, 14, 12]  (for part B)
+   const long bid = 0; // 309
+   const Type type; // three_of_a_kind
 
    constexpr auto operator<=>(const Hand& r) const noexcept
    {
@@ -56,28 +57,34 @@ struct Hand
 private:
    Type computeType()
    {
-      auto hist = hand | filter([](auto c) { return c != 0; }) | to<std::set>;
-      auto infos = hist | transform([&](int card) { return count(hand, card); }) | to<std::vector>;
-      sort(infos);
+      // hand   = [14, 2, 0, 14, 12]
+
+      auto unique = hand | filter([](auto c) { return c != 0; }) | to<std::set>;
+      auto hist = unique | transform([&](int card) { return count(hand, card); }) | to<std::vector>;
+      sort(hist);
       auto jokers = count(hand, 0);
 
-      if (hist.size() <= 1) // may also be all jokers
+      // unique = {2, 14, 12}
+      // hist   = [1, 1, 2]
+      // jokers = 1
+
+      if (unique.size() <= 1) // may also be all jokers
          return Type::five_of_a_kind; // 5
-      else if (hist.size() == 2)
+      else if (unique.size() == 2)
       {
-         if (infos[1] + jokers == 4)
+         if (hist[1] + jokers == 4)
             return Type::four_of_a_kind; // 1, 4
          else
             return Type::full_house; // 2, 3
       }
-      else if (hist.size() == 3)
+      else if (unique.size() == 3)
       {
-         if (infos[2] + jokers == 3)
+         if (hist[2] + jokers == 3)
             return Type::three_of_a_kind; // 1, 1, 3
          else
             return Type::two_pair; // 1, 2, 2
       }
-      else if (hist.size() == 4)
+      else if (unique.size() == 4)
          return Type::one_pair; // 1, 1, 1, 2
       else
          return Type::high_card; // 1, 1, 1, 1, 1
@@ -104,7 +111,7 @@ int main(int argc, char* argv[])
       handsB.emplace_back(std::make_unique<Hand>(hand, hand | to_valueB | to<std::vector>(), bid));
    }
 
-   auto doit = [](std::vector<std::unique_ptr<Hand>>& hands)
+   auto rankit = [](std::vector<std::unique_ptr<Hand>>& hands)
    {
       std::ranges::sort(hands, [](auto& a, auto& b) { return *a < *b; });
 
@@ -121,10 +128,10 @@ int main(int argc, char* argv[])
    //
    // part A
    //
-   fmt::println("A={}", doit(handsA));
+   fmt::println("A={}", rankit(handsA));
 
    //
    // part B
    //
-   fmt::println("B={}", doit(handsB));
+   fmt::println("B={}", rankit(handsB));
 }
