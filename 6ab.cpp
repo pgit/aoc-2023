@@ -3,12 +3,8 @@
 #include <fstream>
 #include <string>
 
-#include <range/v3/algorithm/count_if.hpp>
 #include <range/v3/range/conversion.hpp>
-#include <range/v3/view/drop.hpp>
 #include <range/v3/view/iota.hpp>
-#include <range/v3/view/stride.hpp>
-#include <range/v3/view/take.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
 using namespace ranges;
@@ -48,23 +44,39 @@ int main(int argc, char* argv[])
    //                 s < -(t/2) + sqrt((t/2)^2 + d) < d
    //
 
-   long A = 0;
-   for (auto [time, distance] : zip(times, distances))
-   {
+   auto count = [](long time, long distance) {
       long victories = 0;
       long speed = 0;
-      for (; speed < time && (time - speed) * speed < distance; ++speed)
-         ;
-      for (; speed < time && (time - speed) * speed >= distance; ++speed, ++victories)
-         ;
+      while (speed < time && (time - speed) * speed <= distance)
+         ++speed;
+
+      while (speed < time && (time - speed) * speed > distance)
+         ++speed, ++victories;
 
       double t2 = double(time) / 2;
       auto calc = std::ceil(std::sqrt((t2 * t2) - distance) + t2) -
                   std::ceil(-std::sqrt((t2 * t2) - distance) + t2);
 
       assert(victories == calc);
+      return victories;
+   };
+
+   //
+   // part A
+   //
+   long A = 0;
+   for (auto [time, distance] : zip(times, distances))
+   {
+      auto victories = count(time, distance);
       A = A ? A * victories : victories;
    }
-
    fmt::println("A={}", A);
+
+   //
+   // part B
+   //
+   auto time = std::stol(fmt::format("{}", fmt::join(times, "")));
+   auto distance = std::stol(fmt::format("{}", fmt::join(distances, "")));
+   auto B = count(time, distance);
+   fmt::println("B={}", B);
 }

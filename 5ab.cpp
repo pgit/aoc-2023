@@ -42,6 +42,8 @@ struct Map
    std::map<Range, Range, std::less<>> ranges;
 };
 
+long delta(decltype(Map::ranges.begin())& it) { return it->second.start - it->first.start; }
+
 int main(int argc, char* argv[])
 {
    assert(argc == 2);
@@ -111,7 +113,7 @@ int main(int argc, char* argv[])
          recurse(step + 1, range, minimum);
 
          range = Range{range.end, std::min(it->first.end, seed.end)};
-         recurse(step + 1, range + (it->second.start - it->first.start), minimum);
+         recurse(step + 1, range + delta(it), minimum);
       }
 
       // emit D
