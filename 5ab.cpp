@@ -33,6 +33,13 @@ struct Range
    auto operator<=>(long other_end) const noexcept { return end <=> other_end; }
 };
 
+constexpr auto make_range = transform(
+   [](auto pair) -> Range {
+      return {pair.first, pair.first + pair.second};
+   });
+
+constexpr auto make_single_range = transform([](auto seed) -> Range { return {seed, seed + 1}; });
+
 struct Map
 {
    std::string from;
@@ -124,7 +131,7 @@ int main(int argc, char* argv[])
    // part A, which is just a subset of part B with fixed intervals of size 1
    //
    auto A = std::numeric_limits<long>::max();
-   for (auto range : seeds | transform([](auto seed) -> Range { return {seed, seed + 1}; }))
+   for (auto range : seeds | make_single_range)
       recurse(0, range, A);
 
    fmt::println("part A: {}", A);
@@ -133,11 +140,7 @@ int main(int argc, char* argv[])
    // part B
    //
    long B = std::numeric_limits<long>::max();
-   for (auto range : zip(seeds | stride(2), seeds | drop(1) | stride(2)) |
-                        transform(
-                           [](auto pair) -> Range {
-                              return {pair.first, pair.first + pair.second};
-                           }))
+   for (auto range : zip(seeds | stride(2), seeds | drop(1) | stride(2)) | make_range)
       recurse(0, range, B);
 
    fmt::println("part B: {}", B);
