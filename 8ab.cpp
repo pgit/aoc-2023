@@ -84,15 +84,12 @@ int main(int argc, char* argv[])
    for (auto& node : nodes)
       fmt::println("{} -> ({}, {})", node->id, node->left->id, node->right->id);
 
-   auto distance = [&](Node* node, Node* to) -> size_t
+   auto distance = [&](Node* node, Node* destination) -> size_t
    {
-      size_t result = 0;
-      while (node != to)
-      {
-         auto d = instructions[result++ % instructions.size()];
-         node = d == 'L' ? node->left : node->right;
-      }
-      return result;
+      size_t steps = 0;
+      for (size_t i; i = steps % instructions.size(), node != destination; ++steps)
+         node = instructions[i] == 'L' ? node->left : node->right;
+      return steps;
    };
 
    //
@@ -130,37 +127,25 @@ int main(int argc, char* argv[])
       for (auto& node : nodes)
          node->visited.clear();
 
-      size_t zstep = 0;
-      size_t zcount = 0;
       size_t step = 0;
       auto* node = start;
-      for (; !node->visited.contains(step % instructions.size()); ++step)
+      for (size_t i; i = step % instructions.size(), !node->visited.contains(i); ++step)
       {
-         if (node->id[2] == 'Z')
-         {
-            assert(zcount == 0);
-            zcount++;
-            zstep = step;
-         }
-         node->visited.emplace(step % instructions.size());
-         auto d = instructions[step % instructions.size()];
-         node = d == 'L' ? node->left : node->right;
+         node->visited.emplace(i);
+         node = instructions[i] == 'L' ? node->left : node->right;
       };
 
-      auto distance_to_start_of_loop = distance(start, node);
+      auto distance_to_loop = distance(start, node);
+      auto loop_size = step - distance_to_loop;
 
-      // Why does this assertion hold? Seems to be due to the way the puzzle input is constructed...
-      assert(step == distance_to_start_of_loop + zstep);
-      assert(zcount == 1);
+      auto* dest = start;
+      for (size_t i = 0; i < loop_size; ++i)
+         dest = instructions[i] == 'L' ? dest->left : dest->right;
 
-      fmt::println("{} loop at {} ({} -> {})", start->id, node->id,
-                   distance_to_start_of_loop, node->visited.size());
-      loops.emplace_back(start, distance_to_start_of_loop, step - distance_to_start_of_loop);
+      fmt::println("{} loop at {}, visited={}, distance_to_loop={}, loop_size={} --> {}", start->id,
+                   node->id, node->visited.size(), distance_to_loop, loop_size, dest->id);
+      loops.emplace_back(start, distance_to_loop, loop_size);
    }
-
-   for (auto loop : loops)
-      fmt::println("{} distance={} loop_size={}", loop.start->id, loop.distance_to_loop,
-                   loop.loop_size);
 
    // I don't know why, but the solution is just the LCM of the loop sizes, despite initial path
    auto loop_sizes = loops | transform([](auto& info) { return info.loop_size; });
