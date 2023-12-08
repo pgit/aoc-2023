@@ -29,16 +29,14 @@ struct Node
    Node* left = nullptr;
    Node* right = nullptr;
    std::set<size_t> visited;
-   bool operator<(const Node& r) const noexcept { return id < r.id; }
-   bool operator<(const std::string& rid) const noexcept { return id < rid; }
 };
 
 struct NodeCmp
 {
    using is_transparent = void;
-   bool operator()(const NodePtr& l, const NodePtr& r) const { return *l < *r; };
-   bool operator()(const NodePtr& l, const std::string& r) const { return *l < r; };
-   bool operator()(const std::string& r, const NodePtr& l) const { return *l < r; };
+   bool operator()(const NodePtr& l, const NodePtr& r) const { return l->id < r->id; };
+   bool operator()(const NodePtr& l, const std::string& r) const { return l->id < r; };
+   bool operator()(const std::string& r, const NodePtr& l) const { return r < l->id; };
 };
 
 std::optional<std::string> getline(std::ifstream& file)
