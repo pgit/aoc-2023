@@ -82,6 +82,9 @@ int main(int argc, char* argv[])
    for (auto& node : nodes)
       fmt::println("{} -> ({}, {})", node->id, node->left->id, node->right->id);
 
+   //
+   // part A
+   //
    auto distance = [&](Node* node, Node* destination) -> size_t
    {
       size_t steps = 0;
@@ -90,9 +93,6 @@ int main(int argc, char* argv[])
       return steps;
    };
 
-   //
-   // part A
-   //
    size_t A = distance(nodes.find("AAA")->get(), nodes.find("ZZZ")->get());
    fmt::println("steps A: {}", A);
 
