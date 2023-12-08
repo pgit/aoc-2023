@@ -23,28 +23,30 @@ int main(int argc, char* argv[])
    assert(argc == 2);
    std::ifstream file(argv[1]);
 
+   size_t A = 0;
+   size_t B = 0;
    std::deque<int> lookahead;
-   size_t sum = 0;
-   size_t total_cards = 0;
    const boost::regex regexp{R"(Card +(\d+):(?: +(\d+))+ \|(?: +(\d+))+)"};
    for (std::string line; std::getline(file, line);)
    {
-      boost::smatch what;
-      boost::regex_match(line, what, regexp, boost::match_extra | boost::match_perl);
-
       //
       // parse
       //
-      int card_number = std::stoi(what[1].str());
-      auto winning_numbers = what[2].captures() | to_number | to<std::set>;
-      auto my_numbers = what[3].captures() | to_number | to<std::set>;
+      auto [card_number, winning_numbers, my_numbers] = [&]()
+      {
+         boost::smatch what;
+         boost::regex_match(line, what, regexp, boost::match_extra | boost::match_perl);
+         return std::make_tuple(std::stoi(what[1].str()),
+                                what[2].captures() | to_number | to<std::set>,
+                                what[3].captures() | to_number | to<std::set>);
+      }();
 
       //
       // part a: number of matches == set intersection size
       //
       int matches = count_if(my_numbers, [&](auto n) { return winning_numbers.contains(n); });
       if (matches)
-         sum += 1 << (matches - 1);
+         A += 1 << (matches - 1);
 
       //
       // part b: apply copies stored in look-ahead deque
@@ -57,7 +59,7 @@ int main(int argc, char* argv[])
          lookahead.pop_front();
       }
 
-      total_cards += copies;
+      B += copies;
 
       // apply 'copies' to the next 'matches.size()' cards via lookahead
       if (lookahead.size() < matches)
@@ -70,5 +72,5 @@ int main(int argc, char* argv[])
                    fmt::join(lookahead, ", "));
    }
 
-   fmt::println("solution: {} total cards: {}", sum, total_cards);
+   fmt::println("solution: {} total cards: {}", A, B);
 }
