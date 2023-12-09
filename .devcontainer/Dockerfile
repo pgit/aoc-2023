@@ -1,7 +1,7 @@
 #
 # https://github.com/microsoft/vscode-dev-containers/tree/main/containers/debian
 #
-FROM docker.io/psedoc/cpp-devcontainer:0.1
+FROM docker.io/psedoc/cpp-devcontainer:bookworm
 
 #
 # enable persistent bash history in container

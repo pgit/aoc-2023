@@ -1,9 +1,9 @@
 # Adevent of Code 2023
-These are my attempts at [Advent of Code 2023](https://adventofcode.com/2023).
+These are my attempts at [Advent of Code 2023](https://adventofcode.com/2023). I'm doing this in C++, my main programming language.
 
-I'm doing this in C++, my main language.
+Usually, I just try to get to the solution quick and dirty, but I am also practicing with ranges while I'm at it.
 
-Usually, I just try to get to the solution quick and dirty, but practicing with ranges while I'm at it. Also, it's demonstrating how to work in a [VSCode Dev container](https://code.visualstudio.com/docs/devcontainers/containers).
+Also, this repository is demonstrating how to work in a [VSCode Dev container](https://code.visualstudio.com/docs/devcontainers/containers). The dev container is custom built from this [Dockerfile](https://github.com/pgit/cpp-devcontainer/blob/main/Dockerfile) and includes latest LLVM, boost and some other libraries. C++ IntelliSense is based on [clangd](https://clangd.llvm.org/) and [this plugin](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd). Debugging works as well, with [lldb](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb).
 
 ## [Day 3](https://adventofcode.com/2023/day/3) [(code)](src/3ab.cpp)
 
