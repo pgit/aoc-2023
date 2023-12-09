@@ -36,15 +36,6 @@ struct NodeCmp
    bool operator()(const std::string& r, const NodePtr& l) const { return r < l->id; };
 };
 
-std::optional<std::string> getline(std::ifstream& file)
-{
-   std::string line;
-   if (std::getline(file, line))
-      return line;
-   else
-      return std::nullopt;
-}
-
 int main(int argc, char* argv[])
 {
    auto file = input(argc, argv);

@@ -5,7 +5,11 @@ I'm doing this in C++, my main language.
 
 Usually, I just try to get to the solution quick and dirty, but practicing with ranges while I'm at it. Also, it's demonstrating how to work in a [VSCode Dev container](https://code.visualstudio.com/docs/devcontainers/containers).
 
-## [Day 4](https://adventofcode.com/2023/day/4)
+## [Day 3](https://adventofcode.com/2023/day/3) [(code)](src/3ab.cpp)
+
+Added empty rows and columns around the actual input array, to avoid the proverbial border cases.
+
+## [Day 4](https://adventofcode.com/2023/day/4) [(code)](src/4ab.cpp)
 
 I like [this one](src/4ab.cpp) because there is a nice feature of [boost::regex](https://www.boost.org/doc/libs/1_83_0/libs/regex/doc/html/index.html) allowing a capture to happen multiple times, if that capture is part of a repeated sub-expression.
 
@@ -24,7 +28,7 @@ The inner `(\d+)` capture group is repeated because it is embeded in a non-captu
 
 Also, for the second part, the extra copies of the cards are handled using a `std::deque` look-ahead in an efficient manner.
 
-## [Day 7](https://adventofcode.com/2023/day/7)
+## [Day 7](https://adventofcode.com/2023/day/7) [(code)](src/7ab.cpp)
 
 Clean core function to compute the hand 'type': Note that the `hand` is already sorted according to card value:
 
@@ -74,15 +78,15 @@ Type computeType()
 }
 ```
 
-## [Day 8](https://adventofcode.com/2023/day/8)
+## [Day 8](https://adventofcode.com/2023/day/8) [(code)](src/8ab.cpp)
 
 As [others on reddit](https://www.reddit.com/r/adventofcode/comments/18df7px/2023_day_8_solutions/), I did not like part II of today very much. I think the input is constructed in a very specific, non-general way for the solution to work as it does.
 
 Anyway, I learned about [Boost.Integer LCM](https://www.boost.org/doc/libs/1_83_0/libs/integer/doc/html/boost_integer/gcd_lcm.html) and notably `lcm_range`, which computes LCM not just of two integeres, but a whole range.
 
-## [Day 9](https://adventofcode.com/2023/day/9)
+## [Day 9](https://adventofcode.com/2023/day/9) [(code)](src/9ab.cpp)
 
-Finally, an easy one again. Thins learned today:
+Finally, an easy one again. Things I learned today:
 
 With [ranges::views::istream](https://ericniebler.github.io/range-v3/istream_8hpp.html), you can easily parse a sequence of numbers, with less overhead than the regexp method mentioned before.
 ```c++
