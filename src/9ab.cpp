@@ -1,3 +1,6 @@
+//
+// https://adventofcode.com/2023/day/9
+//
 #include <cassert>
 #include <fstream>
 #include <sstream>
@@ -40,7 +43,7 @@ Result delta(const std::vector<long>& numbers)
                         to<std::vector>;
 
    auto decend = delta(deltas);
-   auto result = Result{numbers[0] - decend.front, decend.back + numbers[numbers.size() - 1]};
+   auto result = Result{numbers.front() - decend.front, decend.back + numbers.back()};
    fmt::println("[{} {} {}]", result.front, fmt::join(numbers, " "), result.back);
    return result;
 }

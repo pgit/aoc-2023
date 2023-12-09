@@ -34,13 +34,11 @@ include_directories(/usr/local/include/range-v3)
 # Project definition
 #
 project(aoc-2023)
-add_executable(1a 1a.cpp)
-add_executable(1b 1b.cpp)
-add_executable(2ab 2ab.cpp)
-add_executable(3ab 3ab.cpp)
-add_executable(4ab 4ab.cpp)
-add_executable(5ab 5ab.cpp)
-add_executable(6ab 6ab.cpp)
-add_executable(7ab 7ab.cpp)
-add_executable(8ab 8ab.cpp)
-add_executable(9ab 9ab.cpp)
+
+# Add the source files in the src folder
+file(GLOB SOURCE_FILES "src/*.cpp")
+
+foreach(SOURCE_FILE ${SOURCE_FILES})
+    get_filename_component(EXECUTABLE_NAME ${SOURCE_FILE} NAME_WE)
+    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILE})
+endforeach()
