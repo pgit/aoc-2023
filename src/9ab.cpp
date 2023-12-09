@@ -1,8 +1,6 @@
 //
 // https://adventofcode.com/2023/day/9
 //
-#include <cassert>
-#include <fstream>
 #include <sstream>
 #include <string>
 using namespace std::literals;
@@ -17,7 +15,7 @@ using namespace std::literals;
 using namespace ranges;
 using namespace ranges::views;
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 struct Result
 {
@@ -50,8 +48,7 @@ Result delta(const std::vector<long>& numbers)
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    Result result;
    std::string line;

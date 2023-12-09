@@ -1,6 +1,4 @@
-#include <cassert>
 #include <deque>
-#include <fstream>
 #include <set>
 #include <string>
 
@@ -10,7 +8,7 @@
 #include <range/v3/view/zip.hpp>
 using namespace ranges::views;
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 constexpr bool is_symbol(char c) { return c != '.' && !isdigit(c); }
 
@@ -25,8 +23,7 @@ const char* getn(const char* p)
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    std::deque<std::string> plan;
    for (std::string line; std::getline(file, line);)

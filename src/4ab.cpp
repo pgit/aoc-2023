@@ -1,6 +1,4 @@
-#include <cassert>
 #include <deque>
-#include <fstream>
 #include <string>
 
 #include <range/v3/algorithm/count_if.hpp>
@@ -14,14 +12,13 @@ using namespace ranges::views;
 #define BOOST_REGEX_MATCH_EXTRA
 #include <boost/regex.hpp>
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 constexpr auto to_number = transform([](auto s) { return std::stoi(s.str()); });
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    size_t A = 0;
    size_t B = 0;

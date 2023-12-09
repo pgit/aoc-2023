@@ -1,6 +1,5 @@
 #include <cassert>
 #include <cmath>
-#include <fstream>
 #include <string>
 
 #include <range/v3/range/conversion.hpp>
@@ -13,7 +12,7 @@ using namespace ranges::views;
 #define BOOST_REGEX_MATCH_EXTRA
 #include <boost/regex.hpp>
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 constexpr auto to_number = transform([](auto s) { return std::stol(s.str()); });
 
@@ -29,8 +28,7 @@ auto get_numbers(auto& file)
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    auto times = get_numbers(file);
    auto distances = get_numbers(file);

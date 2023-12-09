@@ -1,6 +1,3 @@
-#include <cassert>
-#include <deque>
-#include <fstream>
 #include <string>
 
 #include <range/v3/algorithm/count_if.hpp>
@@ -17,7 +14,7 @@ using namespace ranges::views;
 #define BOOST_REGEX_MATCH_EXTRA
 #include <boost/regex.hpp>
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 constexpr auto to_number = transform([](auto s) { return std::stol(s.str()); });
 
@@ -53,8 +50,7 @@ long delta(decltype(Map::ranges.begin())& it) { return it->second.start - it->fi
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    std::string line;
    std::getline(file, line);

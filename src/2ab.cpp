@@ -1,16 +1,13 @@
-#include <cassert>
-#include <fstream>
 #include <string>
 
 #define BOOST_REGEX_MATCH_EXTRA
 #include <boost/regex.hpp>
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    size_t power = 0;
    size_t sum = 0;

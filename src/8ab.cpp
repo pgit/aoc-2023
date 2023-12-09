@@ -1,7 +1,4 @@
-#include <cassert>
-#include <fstream>
 #include <string>
-#include <string_view>
 using namespace std::literals;
 
 #include <range/v3/algorithm/all_of.hpp>
@@ -19,7 +16,7 @@ using namespace ranges::views;
 
 #include <boost/integer/common_factor_rt.hpp>
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 struct Node;
 using NodePtr = std::unique_ptr<Node>;
@@ -50,8 +47,7 @@ std::optional<std::string> getline(std::ifstream& file)
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    std::set<NodePtr, NodeCmp> nodes;
 

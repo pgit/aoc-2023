@@ -1,5 +1,3 @@
-#include <cassert>
-#include <fstream>
 #include <string>
 #include <string_view>
 using namespace std::literals;
@@ -17,7 +15,7 @@ using namespace ranges::views;
 #define BOOST_REGEX_MATCH_EXTRA
 #include <boost/regex.hpp>
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 // '2' => 2, ..., 'T' => 10, ...
 constexpr auto to_valueA = transform([](auto c) -> int { return "..23456789TJQKA"sv.find(c); });
@@ -93,8 +91,7 @@ private:
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    std::vector<std::unique_ptr<Hand>> handsA;
    std::vector<std::unique_ptr<Hand>> handsB;

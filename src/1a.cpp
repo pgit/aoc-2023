@@ -1,13 +1,10 @@
-#include <cassert>
-#include <fstream>
 #include <string>
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    size_t sum = 0;
    std::string line;

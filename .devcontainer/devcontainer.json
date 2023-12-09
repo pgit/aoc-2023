@@ -18,7 +18,10 @@
 					"--compile-commands-dir=build"
 				],
 				"C_Cpp.intelliSenseEngine": "disabled",
-				"lldb.showDisassembly": "never"
+				"lldb.showDisassembly": "never",
+				"cmake.debugConfig": {
+					"cwd": "${workspaceFolder}"
+				 }
 			},
 
 			// Add the IDs of extensions you want installed when the container is created.

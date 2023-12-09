@@ -1,20 +1,18 @@
 #include <cassert>
-#include <fstream>
 #include <string>
 #include <vector>
 
 #include <range/v3/view.hpp>
 namespace rv = ranges::views;
 
-#include <fmt/ostream.h>
+#include "common.hpp"
 
 static const std::vector<std::string> digits = {"one", "two",   "three", "four", "five",
                                                 "six", "seven", "eight", "nine"};
 
 int main(int argc, char* argv[])
 {
-   assert(argc == 2);
-   std::ifstream file(argv[1]);
+   auto file = input(argc, argv);
 
    size_t sum = 0;
    std::string line;
