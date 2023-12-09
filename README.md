@@ -6,7 +6,7 @@ I'm doing this in C++, my main language.
 Usually, I just try to get to the solution quick and dirty, but practicing with ranges while I'm at it. Also, it's demonstrating how to work in a [VSCode Dev container](https://code.visualstudio.com/docs/devcontainers/containers).
 
 ## Day 4
-I like this one because there is a nice feature of [boost::regex](https://www.boost.org/doc/libs/1_83_0/libs/regex/doc/html/index.html) allowing a capture to happen multiple times, if that capture is part of a repeated sub-expression.
+I like [this one](src/4ab.cpp) because there is a nice feature of [boost::regex](https://www.boost.org/doc/libs/1_83_0/libs/regex/doc/html/index.html) allowing a capture to happen multiple times, if that capture is part of a repeated sub-expression.
 
 ```c++
 boost::regex regexp{R"(Card +(\d+):(?: +(\d+))+ \|(?: +(\d+))+)"};
