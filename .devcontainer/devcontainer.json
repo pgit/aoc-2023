@@ -20,6 +20,7 @@
 				"C_Cpp.intelliSenseEngine": "disabled",
 				"lldb.showDisassembly": "never",
 				"cmake.debugConfig": {
+					"type": "lldb",
 					"cwd": "${workspaceFolder}"
 				 }
 			},
