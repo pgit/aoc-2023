@@ -94,3 +94,23 @@ std::istringstream ss{line};
 auto numbers = istream<long>(ss) | ranges::to<std::vector>;
 ```
 This is also possible with the file stream directly, but that would ignore the newlines. And as with most AoC code, no error checking.
+
+## [Day 10](https://adventofcode.com/2023/day/9) [(code)](src/10ab.cpp)
+
+This puzzle involves a system of Pipes, encoded by characters `-`, `|`, `F`, `J`, `L`, `7` and `.` as noted in the [puzzle description](https://adventofcode.com/2023/day/10). With UNICODE line drawing characters, this looks much nicer:
+
+![Map](images/10-map.png) ![Count](images/10-count.png)
+
+First map shows an example input with the starting point `S`. The second one is an example solution for Part B, resulting in 4 enclosed tiles.
+
+Part B can be done with a straighforward scan line algorithm that goes through each row of the map and toggles a flag between being *inside* or *outside* the loop. This is obvious when encountering a `│`  sign. But for and of `─`, `└`, `┘`, `┐` and `┌` it is a bit more complicated:
+
+When scanning a line, besides the `|` you can only ever encounter a `└` or `┌`, or there there is somehting wrong with the loop. If the `└` ends with an `┘`, the *inside*-flag doesn't change. But if it ends with an `┐`, it does.
+
+So all 5 situations in which the *inside* flag needs to change are:
+
+* `|`
+* `┌┄┄┄┄┘`  (zero or more horizontal lines)
+* `└┄┄┄┄┐` (zero or more horizontal lines)
+
+Then, it's only about counting `.` while *inside* is true.
