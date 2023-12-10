@@ -92,7 +92,7 @@ struct Map
       if (c.y >= 0 && c.y < map.size())
          if (c.x >= 0 && c.x <= map[c.y].size())
             return map[c.y][c.x];
-      
+
       static Pipe mydot = DOT;
       return mydot; // yes I know I'm returning a non-const reference to a static here
    }
@@ -156,9 +156,10 @@ int main(int argc, char* argv[])
             cell = DOT;
 
    //
-   // Scan rows. Any encounter of '|', "┌(─*)┘" or "└(─*)┐" (with "─*" meaning zero or more
-   // horizontal lines) toggles the 'inside' flag. Any '.' encountered while this flag is true
-   // is inside the loop.
+   // Scan rows: Any encounter of '|', "┌┄┘" or "└┄┐" toggles the inside flag, and any encounter
+   // of '.' while the flag is true means that the '.' is inside the loop.
+   //
+   // This loop expectes the map to be 'clean', i.e. contain only the (closed) loop and '.'.
    //
    int count = 0;
    for (auto& row : map.map)
@@ -171,6 +172,7 @@ int main(int argc, char* argv[])
          case '|':
             inside = !inside;
             break;
+
          case '.':
             if (inside)
             {
@@ -178,15 +180,21 @@ int main(int argc, char* argv[])
                count++;
             }
             break;
-         default:
+
+         case 'F':
+         case 'L':
          {
             auto start = *it++;
-            while (it->symbol == '-')
+            while (it->symbol == '-') // skip ┄
                it++;
-            if (start.symbol == 'F' && it->symbol == 'J' ||
-                start.symbol == 'L' && it->symbol == '7')
+            if (start.symbol == 'F' && it->symbol == 'J' || // ┌┄┘
+                start.symbol == 'L' && it->symbol == '7') // └┄┐
                inside = !inside;
+            break;
          }
+
+         default:
+            assert(false);
          }
       }
    }
