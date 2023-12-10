@@ -31,13 +31,9 @@ link_libraries(fmt::fmt)
 include_directories(/usr/local/include/range-v3)
 
 #
-# Project definition
+# targets
 #
-project(aoc-2023)
-
-# Add the source files in the src folder
 file(GLOB SOURCE_FILES "src/*.cpp")
-
 foreach(SOURCE_FILE ${SOURCE_FILES})
     get_filename_component(EXECUTABLE_NAME ${SOURCE_FILE} NAME_WE)
     add_executable(${EXECUTABLE_NAME} ${SOURCE_FILE})
