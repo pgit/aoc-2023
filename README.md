@@ -99,7 +99,9 @@ This is also possible with the file stream directly, but that would ignore the n
 
 This puzzle involves a system of Pipes, encoded by characters `-`, `|`, `F`, `J`, `L`, `7` and `.` as noted in the [puzzle description](https://adventofcode.com/2023/day/10). With UNICODE line drawing characters, this looks much nicer:
 
-![Map](images/10-map.png) ![Count](images/10-count.png)
+![Input](images/10-input.png)
+![Map](images/10-map.png)
+![Count](images/10-count.png)
 
 First map shows an example input with the starting point `S`. The second one is an example solution for Part B, resulting in 4 enclosed tiles.
 
