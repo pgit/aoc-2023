@@ -2,12 +2,8 @@
 // https://adventofcode.com/2023/day/11
 //
 #include <set>
-#include <string>
-using namespace std::literals;
 
 #include <range/v3/algorithm/all_of.hpp>
-#include <range/v3/range/conversion.hpp>
-#include <range/v3/view/drop.hpp>
 #include <range/v3/view/filter.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/istream.hpp>
