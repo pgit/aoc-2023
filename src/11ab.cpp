@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 {
    auto file = input(argc, argv);
 
-   const int EXPANSION = 2; // 1'000'000; // A: 2 B: 1'000'000
+   const int EXPANSION = 2; // A: 2 B: 1'000'000
 
    //
    // parse input file, applying vertical expansion on the fly
@@ -51,18 +51,20 @@ int main(int argc, char* argv[])
    }
 
    //
-   // apply horizontal expansion by going through used x-Coordinates from left to right
+   // Apply horizontal expansion by going through used x-Coordinates from left to right.
+   // This works because Coords is using the default <=> operator, which imposes a lexicographical
+   // ordering on the [x, y] members.
    //
    std::set<Coord> expanded;
    {
+      auto it = galaxies.begin();
       int expansion = 0, last_x = *used_x.begin();
       for (int x : used_x)
       {
          expansion += std::max(0, x - last_x - 1) * (EXPANSION - 1);
-         last_x = x;
-         for (auto it = galaxies.lower_bound(Coord{x, std::numeric_limits<int>::min()});
-              it != galaxies.upper_bound(Coord{x, std::numeric_limits<int>::max()}); ++it)
+         for (; it->x == x; ++it)
             expanded.insert(*it + Coord{expansion, 0});
+         last_x = x;
       }
    }
 
