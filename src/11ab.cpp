@@ -17,12 +17,12 @@ using namespace ranges::views;
 
 struct Coord
 {
-   int x = -1, y = -1;
+   long x = -1, y = -1;
    auto operator<=>(const Coord& r) const = default;
    Coord operator+(const Coord& r) const { return Coord{x + r.x, y + r.y}; }
 };
 
-int computeDistances(std::ifstream& file, int factor)
+long computeDistances(std::ifstream& file, long factor)
 {
    assert(factor >= 1);
 
@@ -55,15 +55,13 @@ int computeDistances(std::ifstream& file, int factor)
    //
    std::set<Coord> expanded;
    {
-      auto used_x = galaxies | transform(&Coord::x) | to<std::set>;
-      auto it = galaxies.begin();
-      int expansion = 0, last_x = *used_x.begin();
-      for (int x : used_x)
+      long expansion = 0, last_x = galaxies.begin()->x;
+      for (auto it = galaxies.begin(); it != galaxies.end();)
       {
-         expansion += std::max(0, x - last_x - 1) * (factor - 1);
-         while (it->x == x)
+         expansion += std::max(0L, it->x - last_x - 1) * (factor - 1);
+         last_x = it->x;
+         while (it != galaxies.end() && it->x == last_x)
             expanded.insert(*it++ + Coord{expansion, 0});
-         last_x = x;
       }
    }
 
