@@ -23,3 +23,21 @@ inline std::optional<std::string> getline(std::ifstream& file)
       return std::nullopt;
 }
 
+namespace fmt
+{
+template <typename T>
+struct formatter<std::optional<T>> : fmt::formatter<T>
+{
+
+   template <typename FormatContext>
+   auto format(const std::optional<T>& opt, FormatContext& ctx)
+   {
+      if (opt)
+      {
+         fmt::formatter<T>::format(*opt, ctx);
+         return ctx.out();
+      }
+      return fmt::format_to(ctx.out(), "NO VALUE");
+   }
+};
+} // namespace fmt
