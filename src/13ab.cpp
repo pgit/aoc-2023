@@ -11,22 +11,22 @@ using namespace ranges::views;
 
 #include "common.hpp"
 
-int findReflection(const std::vector<std::string>& vec, int smudges)
+int findReflection(const std::vector<std::string>& vec, const int allowed_smudges)
 {
    for (int pos = 1; pos < vec.size(); ++pos)
    {
-      int a = pos - 1, b = pos, smudge = smudges;
+      int a = pos - 1, b = pos, smudges = allowed_smudges;
       while (a >= 0 && b < vec.size() &&
              ranges::all_of(zip(vec[a], vec[b]),
-                            [&](const auto& p) { return p.first == p.second || smudge-- > 0; }))
+                            [&](const auto& p) { return p.first == p.second || smudges-- > 0; }))
          --a, ++b;
 
       // this is a match only if EXACTLY the required numbers of smudges have been used
-      if ((a == -1 || b == vec.size()) && smudge == 0)
+      if ((a == -1 || b == vec.size()) && smudges == 0)
          return pos;
    }
 
-   return 0;
+   return 0; // no mirror found
 }
 
 int main(int argc, char* argv[])
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
          rows.emplace_back(row);
 
       std::vector<std::string> columns;
-      for (size_t i : iota(0UL, rows[0].size()))
+      for (size_t i = 0; i < rows[0].size(); ++i)
          columns.emplace_back(rows | transform([&](auto& str) { return str[i]; }) |
                               to<std::string>);
 
