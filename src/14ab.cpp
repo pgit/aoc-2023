@@ -70,12 +70,12 @@ static_assert(std::bidirectional_iterator<ColumnIterator>);
 struct Row
 {
    char* p0;
-   const ssize_t dy; // offset to next column
+   const ssize_t dx; // offset to next column
    size_t w;
 
    size_t size() const { return w; }
-   auto begin() const { return ColumnIterator{p0, dy}; }
-   auto end() const { return ColumnIterator{p0 + dy * w, dy}; }
+   auto begin() const { return ColumnIterator{p0, dx}; }
+   auto end() const { return ColumnIterator{p0 + dx * w, dx}; }
 };
 
 static_assert(std::ranges::range<Row>);
