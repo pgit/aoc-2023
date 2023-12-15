@@ -22,12 +22,11 @@ using namespace ranges::views;
 struct ColumnIterator
 {
    char* p = nullptr;
-   int d = 0;
+   ssize_t d = 0;
 
    using value_type = char;
    using difference_type = std::ptrdiff_t;
 
-   // char& operator*() { return *p; }
    char& operator*() const { return *p; }
    ColumnIterator& operator++()
    {
@@ -35,10 +34,11 @@ struct ColumnIterator
       p += d;
       return *this;
    }
+
    ColumnIterator& operator--()
    {
-      assert(*p);
       p -= d;
+      assert(*p);
       return *this;
    }
 
@@ -49,60 +49,76 @@ struct ColumnIterator
       p += d;
       return temp;
    }
+
    ColumnIterator operator--(int) // NOLINT(cert-dcl21-cpp)
    {
       ColumnIterator temp = *this;
-      assert(*p);
       p -= d;
+      assert(*p);
       return temp;
    }
 
    bool operator==(const ColumnIterator& other) const { return p == other.p; }
-   bool operator==(const nullptr_t&) const { return *p == 0; }
    difference_type operator-(const ColumnIterator& other) const { return (p - other.p) / d; }
 };
 
 static_assert(std::forward_iterator<ColumnIterator>);
 static_assert(std::bidirectional_iterator<ColumnIterator>);
 
+// -------------------------------------------------------------------------------------------------
+
 struct Row
 {
    char* p0;
-   const int dcol; // offset to next column
+   const ssize_t dy; // offset to next column
+   size_t w;
 
-   auto begin() const { return ColumnIterator{p0, dcol}; }
-   nullptr_t end() const { return nullptr; }
+   size_t size() const { return w; }
+   auto begin() const { return ColumnIterator{p0, dy}; }
+   auto end() const { return ColumnIterator{p0 + dy * w, dy}; }
 };
 
-// FIXME: none of the following range concepts apply to Row -- what is missing?
 static_assert(std::ranges::range<Row>);
 static_assert(ranges::range<Row>);
 static_assert(ranges::input_range<Row>);
 static_assert(ranges::forward_range<Row>);
+static_assert(ranges::common_range<Row>); // if begin() and end() return the same type
 
 struct RowIterator
 {
    Row row;
-   const int drow; // offset to next row
+   const ssize_t dy; // offset to next row
+
+   using value_type = Row;
+   using difference_type = std::ptrdiff_t;
 
    Row& operator*() { return row; }
-   RowIterator operator++()
+   RowIterator& operator++()
    {
-      row.p0 += drow;
+      row.p0 += dy;
       return *this;
    }
-   bool operator==(nullptr_t) const { return *row.p0 == 0; }
+
+   bool operator==(const RowIterator& other) const { return row.p0 == other.row.p0; }
 };
 
 struct View
 {
    char* p0;
-   int drow, dcol; // delta within view to go to next row / column
-   Row row(int r) const { return Row{p0 + r * drow, dcol}; }
+   ssize_t dy, dx; // delta within view to go to next row / column
+   size_t w, h;
+   Row row(int r) const { return Row{p0 + r * dy, dx, w}; }
 
-   RowIterator begin() const { return {row(0), drow}; }
-   nullptr_t end() const { return nullptr; }
+   RowIterator begin() const { return {row(0), dy}; }
+   RowIterator end() const { return {row(h), 0}; }
 };
+
+/*
+static_assert(std::ranges::range<View>);
+static_assert(ranges::range<View>);
+static_assert(ranges::input_range<View>);
+static_assert(ranges::forward_range<View>);
+*/
 
 // -------------------------------------------------------------------------------------------------
 
@@ -116,10 +132,14 @@ enum class Direction : int
 
 struct Map
 {
+#if 1
    Map(size_t w_, size_t h_) : w(w_), h(h_), dy(w + 2), m_data((w + 2) * (h + 2), 0) {}
-
-   inline char* data() { return m_data.data() + dy + 1; }
-   inline int delta(int x, int y) const { return y * dy + x; }
+   inline char* data() { return m_data.data() + dy; }
+#else
+   Map(size_t w_, size_t h_) : w(w_), h(h_), dy(w), m_data(w * h, 0) {}
+   inline char* data() { return m_data.data() + dy; }
+#endif
+   inline int delta(int x, int y) const { return x + y * dy; }
    inline char* pos(int x, int y) { return data() + delta(x, y); }
    inline char& at(int x, int y) { return *pos(x, y); }
 
@@ -129,13 +149,13 @@ struct Map
       {
          // clang-format off
       case Direction::west:
-         return View{pos(  0,   0), delta( 0,  1), delta( 1,  0)};
+         return View{pos(  0,   0), delta( 0,  1), delta( 1,  0), w, h};
       case Direction::north:
-         return View{pos(w-1,   0), delta(-1,  0), delta( 0,  1)};
+         return View{pos(w-1,   0), delta(-1,  0), delta( 0,  1), h, w};
       case Direction::east:
-         return View{pos(w-1, h-1), delta( 0, -1), delta(-1,  0)};
+         return View{pos(w-1, h-1), delta( 0, -1), delta(-1,  0), w, h};
       case Direction::south:
-         return View{pos(  0, h-1), delta( 1,  0), delta( 0, -1)};
+         return View{pos(  0, h-1), delta( 1,  0), delta( 0, -1), h, w};
          // clang-format on
       }
    }
@@ -145,7 +165,7 @@ struct Map
       return std::hash<std::string_view>{}(std::string_view(m_data.data(), m_data.size()));
    }
 
-   const int w, h, dy;
+   const size_t w, h, dy;
    std::vector<char> m_data;
 };
 
@@ -157,6 +177,10 @@ size_t weight(Row& row)
                      size_t(0));
 }
 
+//
+// This implementation relies on a non-[.#O]-border around the map, avoiding a lot of checks
+// against vec.end().
+//
 void slide(Row& vec)
 {
    for (auto p0 = vec.begin(); p0 != vec.end();)
@@ -209,9 +233,9 @@ size_t weight(Map& map, Direction dir)
    return total;
 }
 
-void dump(Map& map)
+void dump(Map& map, Direction direction = Direction::west)
 {
-   for (auto row : map.view(Direction::west))
+   for (auto row : map.view(direction))
       fmt::println("{}", fmt::join(row, ""));
    fmt::println("");
 }
@@ -226,13 +250,10 @@ int main(int argc, char* argv[])
 
    const auto w = rows[0].size(), h = rows.size();
    Map map(w, h);
-
-   std::vector<std::string> columns;
-   for (size_t i = 0; i < rows[0].size(); ++i)
+   for (size_t i = 0; i < rows.size(); ++i)
    {
       assert(rows[i].size() == w);
       memcpy(map.pos(0, i), rows[i].data(), w);
-      columns.emplace_back(rows | transform([&](auto& str) { return str[i]; }) | to<std::string>);
    }
 
    //
@@ -240,7 +261,7 @@ int main(int argc, char* argv[])
    //
    slide(map, Direction::north);
 
-   dump(map);
+   // dump(map);
 
    size_t A = weight(map, Direction::north);
    fmt::println("A: {}", A);
