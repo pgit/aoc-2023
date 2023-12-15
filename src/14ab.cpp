@@ -4,21 +4,107 @@
 #include <set>
 
 #include <range/v3/algorithm/all_of.hpp>
+#include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/iota.hpp>
 #include <range/v3/view/join.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/zip.hpp>
-#include "range/v3/view/subrange.hpp"
+#include "range/v3/view/filter.hpp"
+#include "range/v3/view/reverse.hpp"
 using namespace ranges;
 using namespace ranges::views;
 
 #include "common.hpp"
 
-struct Coord
+// -------------------------------------------------------------------------------------------------
+
+struct ColumnIterator
 {
-   int x, y;
+   char* p = nullptr;
+   int d = 0;
+
+   using value_type = char;
+   using difference_type = std::ptrdiff_t;
+
+   // char& operator*() { return *p; }
+   char& operator*() const { return *p; }
+   ColumnIterator& operator++()
+   {
+      assert(*p);
+      p += d;
+      return *this;
+   }
+   ColumnIterator& operator--()
+   {
+      assert(*p);
+      p -= d;
+      return *this;
+   }
+
+   ColumnIterator operator++(int) // NOLINT(cert-dcl21-cpp)
+   {
+      ColumnIterator temp = *this;
+      assert(*p);
+      p += d;
+      return temp;
+   }
+   ColumnIterator operator--(int) // NOLINT(cert-dcl21-cpp)
+   {
+      ColumnIterator temp = *this;
+      assert(*p);
+      p -= d;
+      return temp;
+   }
+
+   bool operator==(const ColumnIterator& other) const { return p == other.p; }
+   bool operator==(const nullptr_t&) const { return *p == 0; }
+   difference_type operator-(const ColumnIterator& other) const { return (p - other.p) / d; }
 };
+
+static_assert(std::forward_iterator<ColumnIterator>);
+static_assert(std::bidirectional_iterator<ColumnIterator>);
+
+struct Row
+{
+   char* p0;
+   const int dcol; // offset to next column
+
+   auto begin() const { return ColumnIterator{p0, dcol}; }
+   nullptr_t end() const { return nullptr; }
+};
+
+// FIXME: none of the following range concepts apply to Row -- what is missing?
+static_assert(std::ranges::range<Row>);
+static_assert(ranges::range<Row>);
+static_assert(ranges::input_range<Row>);
+static_assert(ranges::forward_range<Row>);
+
+struct RowIterator
+{
+   Row row;
+   const int drow; // offset to next row
+
+   Row& operator*() { return row; }
+   RowIterator operator++()
+   {
+      row.p0 += drow;
+      return *this;
+   }
+   bool operator==(nullptr_t) const { return *row.p0 == 0; }
+};
+
+struct View
+{
+   char* p0;
+   int drow, dcol; // delta within view to go to next row / column
+   Row row(int r) const { return Row{p0 + r * drow, dcol}; }
+
+   RowIterator begin() const { return {row(0), drow}; }
+   nullptr_t end() const { return nullptr; }
+};
+
+// -------------------------------------------------------------------------------------------------
 
 enum class Direction : int
 {
@@ -32,65 +118,6 @@ struct Map
 {
    Map(size_t w_, size_t h_) : w(w_), h(h_), dy(w + 2), m_data((w + 2) * (h + 2), 0) {}
 
-   struct ColumnIterator
-   {
-      char* p;
-      int d;
-
-      char& operator*() const { return *p; }
-      ColumnIterator& operator++()
-      {
-         assert(*p);
-         p += d;
-         return *this;
-      }
-      const ColumnIterator operator++(int)
-      {
-         ColumnIterator result(*this);
-         assert(*p);
-         p += d;
-         return result;
-      }
-      bool operator==(const ColumnIterator& other) const { return p == other.p; }
-      bool operator==(nullptr_t) const { return *p == 0; }
-      ssize_t operator-(const ColumnIterator& other) const { return ssize_t(p - other.p) / d; }
-   };
-
-   struct Row
-   {
-      char* p0;
-      const int dcol;
-
-      ColumnIterator begin() const { return {p0, dcol}; }
-      nullptr_t end() const { return nullptr; }
-   };
-
-   struct RowIterator
-   {
-      Row row;
-      const int drow;
-
-      Row& operator*() { return row; }
-      RowIterator operator++()
-      {
-         row.p0 += drow;
-         return *this;
-      }
-      bool operator==(const RowIterator& other) const { return row.p0 == other.row.p0; }
-      bool operator==(nullptr_t) const { return *row.p0 == 0; }
-   };
-
-   struct View
-   {
-      Map& map;
-      char* p0;
-      int drow, dcol; // delta within view to go to next row / column
-      Row row(int r) const { return Row{p0 + r * drow, dcol}; }
-
-      RowIterator begin() const { return {row(0), drow}; }
-      nullptr_t end() const { return nullptr; }
-   };
-
    inline char* data() { return m_data.data() + dy + 1; }
    inline int delta(int x, int y) const { return y * dy + x; }
    inline char* pos(int x, int y) { return data() + delta(x, y); }
@@ -102,13 +129,13 @@ struct Map
       {
          // clang-format off
       case Direction::west:
-         return View{*this, pos(  0,   0), delta( 0,  1), delta( 1,  0)};
+         return View{pos(  0,   0), delta( 0,  1), delta( 1,  0)};
       case Direction::north:
-         return View{*this, pos(w-1,   0), delta(-1,  0), delta( 0,  1)};
+         return View{pos(w-1,   0), delta(-1,  0), delta( 0,  1)};
       case Direction::east:
-         return View{*this, pos(w-1, h-1), delta( 0, -1), delta(-1,  0)};
+         return View{pos(w-1, h-1), delta( 0, -1), delta(-1,  0)};
       case Direction::south:
-         return View{*this, pos(  0, h-1), delta( 1,  0), delta( 0, -1)};
+         return View{pos(  0, h-1), delta( 1,  0), delta( 0, -1)};
          // clang-format on
       }
    }
@@ -123,23 +150,14 @@ struct Map
 };
 
 // reversed weight function, pass south view if you want the north weight
-size_t weight(Map::Row& row)
+size_t weight(Row& row)
 {
-#if 1
-   size_t result = 0, weight = 0;
-   for (auto c : row)
-   {
-      ++weight;
-      if (c == 'O')
-         result += weight;
-   }
-   return result;
-#else
-   return 0;
-#endif
+   return accumulate(zip(reverse(row), iota(1)) | filter([](auto a) { return a.first == 'O'; }) |
+                        transform([](auto a) { return a.second; }),
+                     size_t(0));
 }
 
-void slide(Map::Row& vec)
+void slide(Row& vec)
 {
    for (auto p0 = vec.begin(); p0 != vec.end();)
    {
@@ -147,7 +165,6 @@ void slide(Map::Row& vec)
       //    OO.O.O..#.O
       // p0 ^
       //
-      // fmt::println("p0={} *p0='{}'", p0 - vec.begin(), *p0);
       while (*p0 != 0 && *p0 != '.')
          ++p0;
 
@@ -156,8 +173,6 @@ void slide(Map::Row& vec)
       // p0   ^
       // p1
       auto p1 = p0;
-      // fmt::println("p0={} p1={} *p0='{}' *p1='{}'", p0 - vec.begin(), p1 - vec.begin(), *p0,
-      // *p1);
       while (*p1 == '.')
          ++p1;
 
@@ -166,8 +181,6 @@ void slide(Map::Row& vec)
       // p0   ^
       // p1    ^
       //
-      // fmt::println("p0={} p1={} *p0='{}' *p1='{}'", p0 - vec.begin(), p1 - vec.begin(), *p0,
-      // *p1);
       while (*p1 == 'O')
          *p0++ = 'O', *p1++ = '.';
 
@@ -199,11 +212,7 @@ size_t weight(Map& map, Direction dir)
 void dump(Map& map)
 {
    for (auto row : map.view(Direction::west))
-   {
-      for (auto c : row)
-         fmt::print("{}", c);
-      fmt::println("");
-   }
+      fmt::println("{}", fmt::join(row, ""));
    fmt::println("");
 }
 
@@ -233,7 +242,7 @@ int main(int argc, char* argv[])
 
    dump(map);
 
-   size_t A = weight(map, Direction::south);
+   size_t A = weight(map, Direction::north);
    fmt::println("A: {}", A);
 
    //
@@ -274,6 +283,6 @@ int main(int argc, char* argv[])
          assert((cycle - t0) % cycle_size == 0);
    }
 
-   size_t B = weight(map, Direction::south);
+   size_t B = weight(map, Direction::north);
    fmt::println("B: {}", B);
 }
