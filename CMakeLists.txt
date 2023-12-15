@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 project(aoc-2023 VERSION 0.1.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS On)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 #
 # find boost
