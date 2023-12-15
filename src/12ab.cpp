@@ -1,8 +1,6 @@
 //
 // https://adventofcode.com/2023/day/12
 //
-#include <set>
-
 #include <range/v3/algorithm/all_of.hpp>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/filter.hpp>
@@ -46,16 +44,32 @@ size_t countVariants(std::string_view pattern, std::optional<int> n, std::span<i
       else if (n == 0) // group finished, but still a '#' left to fill
          return 0;
       else // continue with group
-         return countVariants(pattern.substr(1), *n - 1, groups);
+      {
+         size_t i = 1;
+         while (pattern[i] == '#' && *n > 0)
+            ++i;
+         return countVariants(pattern.substr(i), *n - i, groups);
+      }
 
    case '?':
-      size_t count = 0;
       if (!n)
+#if 0
+      {
+         // ????? 2,1 == ???? 1,1
+         size_t i = 1;
+         while (pattern[i] == '?' && *n > 0)
+            ++i;
+         if (pattern[i] == '#')
+            --i;
+         return 0;
+      }
+#else
          return
             // treat '?' as '.' and skip it
             countVariants(pattern.substr(1), std::nullopt, groups) +
             // treat '?' as '#' and start a group
             (groups.empty() ? 0 : countVariants(pattern, groups[0], groups.subspan(1)));
+#endif
       else if (n == 0) // treat as '.' and finish group
          return countVariants(pattern.substr(1), std::nullopt, groups);
       else // treat as '#' and continue with group
@@ -73,13 +87,14 @@ int main(int argc, char* argv[])
    {
       boost::smatch what;
       boost::regex_match(line, what, regexp, boost::match_extra | boost::match_perl);
-   
+
       auto pattern = what[1].str();
       auto groups = what[2].captures() | to_number | to<std::vector>;
       auto count = countVariants(pattern + '.', std::nullopt, groups);
       fmt::println("{} {} -> {}", pattern, fmt::join(groups, ","), count);
       A += count;
-      
+      continue;
+
       pattern = repeat_n(what[1].str(), 5) | join('?') | to<std::string>;
       groups = repeat_n(what[2].captures() | to_number, 5) | join | to<std::vector>;
       fmt::println("{} {}", pattern, fmt::join(groups, ","));
