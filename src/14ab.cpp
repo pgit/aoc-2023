@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
          fmt::println("forwarded {} loops to {}", forward_loops, cycle);
       }
       else if (h0 == hash)
-         assert((cycle - t0) % cycle_size == 0);
+         assert((cycle - t0) % loop_size == 0);
    }
 
    size_t B = weight(map, Direction::north);
