@@ -30,7 +30,6 @@ struct ColumnIterator
    char& operator*() const { return *p; }
    ColumnIterator& operator++()
    {
-      assert(*p);
       p += d;
       return *this;
    }
@@ -38,14 +37,12 @@ struct ColumnIterator
    ColumnIterator& operator--()
    {
       p -= d;
-      assert(*p);
       return *this;
    }
 
    ColumnIterator operator++(int) // NOLINT(cert-dcl21-cpp)
    {
       ColumnIterator temp = *this;
-      assert(*p);
       p += d;
       return temp;
    }
@@ -54,7 +51,6 @@ struct ColumnIterator
    {
       ColumnIterator temp = *this;
       p -= d;
-      assert(*p);
       return temp;
    }
 
@@ -70,7 +66,7 @@ static_assert(std::bidirectional_iterator<ColumnIterator>);
 struct Row
 {
    char* p0;
-   const ssize_t dx; // offset to next column
+   ssize_t dx = 0; // offset to next column
    size_t w;
 
    size_t size() const { return w; }
@@ -84,41 +80,62 @@ static_assert(ranges::input_range<Row>);
 static_assert(ranges::forward_range<Row>);
 static_assert(ranges::common_range<Row>); // if begin() and end() return the same type
 
+template <>
+inline constexpr bool ranges::enable_borrowed_range<Row> = true;
+static_assert(ranges::borrowed_range<Row>);
+static_assert(ranges::viewable_range<Row>);
+
+// -------------------------------------------------------------------------------------------------
+
 struct RowIterator
 {
    Row row;
-   const ssize_t dy; // offset to next row
+   ssize_t dy = 0; // offset to next row
 
    using value_type = Row;
    using difference_type = std::ptrdiff_t;
 
-   Row& operator*() { return row; }
+   Row operator*() const { return row; }
    RowIterator& operator++()
    {
       row.p0 += dy;
       return *this;
    }
+   RowIterator operator++(int) // NOLINT(cert-dcl21-cpp)
+   {
+      RowIterator temp = *this;
+      row.p0 += dy;
+      return temp;
+   }
 
    bool operator==(const RowIterator& other) const { return row.p0 == other.row.p0; }
 };
 
-struct View
+static_assert(std::forward_iterator<RowIterator>);
+static_assert(!std::bidirectional_iterator<RowIterator>);
+
+struct View 
 {
    char* p0;
-   ssize_t dy, dx; // delta within view to go to next row / column
-   size_t w, h;
-   Row row(int r) const { return Row{p0 + r * dy, dx, w}; }
+   const ssize_t dy, dx; // delta within view to go to next row / column
+   const size_t w, h;
 
+   Row row(int r) const { return Row{p0 + r * dy, dx, w}; }
    RowIterator begin() const { return {row(0), dy}; }
-   RowIterator end() const { return {row(h), 0}; }
+   RowIterator end() const { return {row(h), dy}; }
 };
 
-/*
+
 static_assert(std::ranges::range<View>);
 static_assert(ranges::range<View>);
 static_assert(ranges::input_range<View>);
 static_assert(ranges::forward_range<View>);
-*/
+static_assert(ranges::common_range<View>);
+
+template <>
+inline constexpr bool ranges::enable_borrowed_range<View> = true;
+static_assert(ranges::borrowed_range<View>);
+static_assert(ranges::viewable_range<View>);
 
 // -------------------------------------------------------------------------------------------------
 
@@ -227,10 +244,7 @@ void slide(Map& map, Direction dir)
 
 size_t weight(Map& map, Direction dir)
 {
-   size_t total = 0;
-   for (auto row : map.view(dir))
-      total += weight(row);
-   return total;
+   return accumulate(map.view(dir) | transform([](auto row) { return weight(row); }), 0UL);
 }
 
 void dump(Map& map, Direction direction = Direction::west)
@@ -267,15 +281,13 @@ int main(int argc, char* argv[])
    fmt::println("A: {}", A);
 
    //
-   // part B: perforam 1M cycles -- which takes forever, but there are loops
+   // part B: perforam 1M cycles -- which takes forever, but there are loops. Detect by hashing.
    //
    std::size_t t0 = 0, h0 = 0, loop_size = 0;
    std::set<size_t> hashes;
    const size_t CYCLES = 1'000'000'000;
    for (size_t cycle = 0; cycle < CYCLES; ++cycle)
    {
-      // fmt::println("Cycle {}", cycle);
-
       //
       // perform a cycle of sliding N, W, S, E
       //
@@ -287,12 +299,12 @@ int main(int argc, char* argv[])
       // detect loops by keeping a set of hashes
       //
       auto hash = map.hash();
-      if (!hashes.insert(hash).second && !t0)
+      if (!hashes.insert(hash).second && !t0) // have we seen this hash already?
       {
          t0 = cycle, h0 = hash;
          fmt::println("start of loop: {}", t0);
       }
-      else if (h0 == hash && !loop_size)
+      else if (h0 == hash && !loop_size) // ... and another time?
       {
          loop_size = cycle - t0;
          fmt::println("end of loop at {}, size {}", cycle, cycle - t0);
@@ -301,9 +313,10 @@ int main(int argc, char* argv[])
          fmt::println("forwarded {} loops to {}", forward_loops, cycle);
       }
       else if (h0 == hash)
-         assert((cycle - t0) % loop_size == 0);
+         assert((cycle - t0) % loop_size == 0); // sanity check, but usually not reached
    }
 
+   dump(map);
    size_t B = weight(map, Direction::north);
-   fmt::println("B: {}", B);
+   fmt::println("A: {} B: {}", A, B);
 }
