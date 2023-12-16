@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
                  });
 
    std::array<std::deque<Label>, 256> boxes;
-   for (auto step : rangeB)
+   for (auto&& step : rangeB)
    {
       auto& deque = boxes[step.hash];
 
@@ -87,15 +87,12 @@ int main(int argc, char* argv[])
          deque.erase(it);
    }
 
-   for (auto box : zip(boxes, iota(0)))
-   {
-      if (box.first.empty())
-         continue;
-      fmt::println("box {}: {}", box.second, fmt::join(box.first | transform(&Label::step), ", "));
-   }
+   for (auto&& [box, i] : zip(boxes, iota(0)))
+      if (!box.empty())
+         fmt::println("box {}: {}", i, fmt::join(box | transform(&Label::step), ", "));
 
    size_t B = 0;
-   for (auto [box, i] : zip(boxes, iota(1)))
+   for (auto&& [box, i] : zip(boxes, iota(1)))
       for (auto&& [lens, j] : zip(box, iota(1)))
          B += i * *lens.focal_length * j;
 
