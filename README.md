@@ -95,7 +95,7 @@ auto numbers = istream<long>(ss) | ranges::to<std::vector>;
 ```
 This is also possible with the file stream directly, but that would ignore the newlines. And as with most AoC code, no error checking.
 
-## [Day 10](https://adventofcode.com/2023/day/9) [(code)](src/10ab.cpp)
+## [Day 10](https://adventofcode.com/2023/day/10) [(code)](src/10ab.cpp)
 
 This puzzle involves a system of Pipes, encoded by characters `-`, `|`, `F`, `J`, `L`, `7` and `.` as noted in the [puzzle description](https://adventofcode.com/2023/day/10). With UNICODE line drawing characters, this looks much nicer:
 
@@ -116,3 +116,40 @@ So all 5 situations in which the *inside* flag needs to change are:
 * `└┄┄┄┄┐` (zero or more horizontal lines)
 
 Then, it's only about counting `.` while *inside* is true.
+
+## [Day 14](https://adventofcode.com/2023/day/14) [(code)](src/14ab.cpp)
+
+This day involved a map again, to which a *slide* operation is applied in one of the four directions N, W, S, E. This is solved by creating a rotated `View` on the map, allowing the sliding algorithm to operate uniformly.
+
+The solution is rather complicated, but I learned how to create custom *row* and *column* iterators that support ranges. 
+
+When creating custom ranges that are a *view* of some referenced data, it is important to make it a [borrowed range](https://en.cppreference.com/w/cpp/ranges/borrowed_range). Otherwise, you will not be able to work with an rvalue of it:
+
+```c++
+size_t weight(Direction dir)
+{
+   return accumulate(view(dir) | transform(&Row::weight), size_t{0});
+}
+```
+
+`view(dir)` returns a non-owning view of the map, over which you can iterate to get the rows as viewed by the given direction.
+
+## [Day 16](https://adventofcode.com/2023/day/16) [(code)](src/16ab.cpp)
+
+With a class modelling a pair of signed Coordinates `(x, y)`, the main loop boils down to
+
+```c++
+void trace(Coord pos, Coord dir)
+{
+   for (;;)
+   {
+      pos += dir;
+      ...
+   }
+}
+```
+and then changing `dir` depending on the current symbal at `pos`:
+
+* On a `\`, the direction is transposed, meaning x and y coordinates are swapped.
+* On a `/`, it's the same, but the coordinates are also negated.
+* The pipe symbols `-` and `|` split the ray into two and are followed using recursion.

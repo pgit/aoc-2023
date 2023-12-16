@@ -74,7 +74,6 @@ struct Row
    auto begin() const { return ColumnIterator{p0, dx}; }
    auto end() const { return ColumnIterator{p0 + dx * w, dx}; }
 
-   // reversed weight function, pass south view if you want the north weight
    size_t weight()
    {
       return accumulate(zip(reverse(*this), iota(1)) |

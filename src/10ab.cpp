@@ -30,13 +30,13 @@ struct Coord
    }
 };
 
-struct Pipe
+struct Tile
 {
    char symbol;
    std::vector<Coord> connections;
    std::string unicodeSymbol;
    bool visited = false;
-   auto operator<=>(const Pipe& other) const noexcept { return symbol <=> other.symbol; }
+   auto operator<=>(const Tile& other) const noexcept { return symbol <=> other.symbol; }
    auto operator<=>(char symbol) const noexcept { return this->symbol <=> symbol; }
    bool operator==(char symbol) const noexcept { return this->symbol == symbol; };
 };
@@ -47,7 +47,7 @@ struct Pipe
 // 7 is a 90-degree bend connecting south and west.
 // F is a 90-degree bend connecting south and east.
 //
-const std::set<Pipe, std::less<>> PIPES = {
+const std::set<Tile, std::less<>> PIPES = {
    // clang-format off
    {'-', {{{-1,  0}, { 1,  0}}}, "─"},
    {'|', {{{ 0, -1}, { 0,  1}}}, "│"},
@@ -65,7 +65,7 @@ const std::set<Pipe, std::less<>> PIPES = {
 
 const std::array<Coord, 4> AROUND = {{{-1, 0}, {0, -1}, {1, 0}, {0, 1}}};
 
-const Pipe DOT = *PIPES.find('.');
+const Tile DOT = *PIPES.find('.');
 
 struct Map
 {
@@ -81,12 +81,12 @@ struct Map
                start = Coord(x, y);
    }
 
-   std::vector<std::vector<Pipe>> map;
+   std::vector<std::vector<Tile>> map;
    Coord start;
 
-   Pipe& at(const Coord& c)
+   Tile& at(const Coord& c)
    {
-      static Pipe mydot = DOT;
+      static Tile mydot = DOT;
       if (c.y >= 0 && c.y < map.size())
          if (c.x >= 0 && c.x <= map[c.y].size())
             return map[c.y][c.x];

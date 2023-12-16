@@ -55,10 +55,10 @@ int main(int argc, char* argv[])
    //
    struct Label
    {
-      std::string_view step;
-      std::string_view label;
-      uint8_t hash;
-      std::optional<int> focal_length;
+      std::string_view step; // jg=7, mn-
+      std::string_view label; // jg, mn
+      uint8_t hash; // 0..255
+      std::optional<int> focal_length; // 7, nullopt
    };
 
    auto rangeB = steps | transform([](auto&& sv) -> Label { //
@@ -80,11 +80,11 @@ int main(int argc, char* argv[])
 
       auto it = std::ranges::find(deque, step.label, &Label::label);
       if (step.focal_length && it != deque.end())
-         *it = step;
+         *it = step; // overwrite existing lens
       else if (step.focal_length)
-         deque.emplace_back(step);
+         deque.emplace_back(step); // add new lens
       else if (it != deque.end())
-         deque.erase(it);
+         deque.erase(it); // remove lens
    }
 
    for (auto&& [box, i] : zip(boxes, iota(0)))
