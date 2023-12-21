@@ -153,3 +153,24 @@ and then changing `dir` depending on the current symbal at `pos`:
 * On a `\`, the direction is transposed, meaning x and y coordinates are swapped.
 * On a `/`, it's the same, but the coordinates are also negated.
 * The pipe symbols `-` and `|` split the ray into two and are followed using recursion.
+
+## [Day 16](https://adventofcode.com/2023/day/18) [(part 1)](src/18a.cpp) [(part 2)](src/18b.cpp)
+
+Part I was very similar to [Day 16](https://adventofcode.com/2023/day/18) and is solved using the same horizontal scanline algorithm.
+
+Part II made this unfeasible, by sheer size of of the map. Instead,  all horionztal line segments are sorted by their y coordinate and then iterated over, computing the size of the rectangles spanned by each *active* horizontal line segment and delta-Y.
+
+```c++
+   using Interval = boost::icl::interval<long>::type;
+   std::multimap<long, Interval> lines;
+```
+
+This requires managing a set of intervals efficently. I did implement such a container myself years ago at work, but wanted to use an existing solution, and found [Boost.Icl](https://www.boost.org/doc/libs/1_84_0/libs/icl/doc/html/index.html). Great stuff!
+
+To compute the rectangules, or the the difference of two sets of segements, just do:
+```c++
+boost::icl::interval_set<long> active, last;
+...
+B += accumulate(active | transform([&](auto i) { return (y - y0) * length(i); }), 0L);
+B += length(last - active);
+```

@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
    //
    // For part B, record map of horizontal lines.
    //
-   using Interval = boost::icl::interval<int>::type;
+   using Interval = boost::icl::interval<long>::type;
    std::multimap<long, Interval> lines;
    const boost::regex regexp{R"(([LRUD]) ([0-9]+) \(#([a-zA-Z0-9]{5})([a-zA-Z0-9])\))"};
    for (std::string line; std::getline(file, line);)
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
    // part B (for map of part A)
    //
    size_t B = 0;
-   boost::icl::interval_set<int> active, last;
+   boost::icl::interval_set<long> active, last;
    int y0 = lines.begin()->first;
    for (auto [y, interval] : lines)
    {
