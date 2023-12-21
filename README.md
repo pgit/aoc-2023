@@ -121,7 +121,7 @@ Then, it's only about counting `.` while *inside* is true.
 
 This day involved a map again, to which a *slide* operation is applied in one of the four directions N, W, S, E. This is solved by creating a rotated `View` on the map, allowing the sliding algorithm to operate uniformly.
 
-The solution is rather complicated, but I learned how to create custom *row* and *column* iterators that support ranges. 
+The solution is rather complicated, but I learned how to create custom *row* and *column* iterators and how to make my *map* and *row* classes *ranges*.
 
 When creating custom ranges that are a *view* of some referenced data, it is important to make it a [borrowed range](https://en.cppreference.com/w/cpp/ranges/borrowed_range). Otherwise, you will not be able to work with an rvalue of it:
 
