@@ -1,6 +1,7 @@
 //
 // https://adventofcode.com/2023/day/18
 //
+#include <range/v3/numeric/accumulate.hpp>
 #include <range/v3/range/conversion.hpp>
 #include <range/v3/view/transform.hpp>
 using namespace ranges;
@@ -19,9 +20,6 @@ using namespace ranges::views;
 struct Coord
 {
    long x = 0, y = 0;
-   Coord operator-() const { return Coord{-x, -y}; }
-   Coord transpose() const { return Coord{y, x}; }
-   Coord operator+(const Coord& r) const { return Coord{x + r.x, y + r.y}; }
    Coord operator-(const Coord& r) const { return Coord{x - r.x, y - r.y}; }
    Coord operator*(int f) const { return Coord{x * f, y * f}; }
    const Coord& operator+=(const Coord& r)
@@ -30,9 +28,6 @@ struct Coord
       y += r.y;
       return *this;
    }
-   Coord min(const Coord& r) { return {std::min(x, r.x), std::min(y, r.y)}; }
-   Coord max(const Coord& r) { return {std::max(x, r.x), std::max(y, r.y)}; }
-   bool operator==(const Coord& r) const noexcept = default;
 };
 
 const std::map<char, Coord> DIRECTIONS = {
@@ -40,28 +35,6 @@ const std::map<char, Coord> DIRECTIONS = {
    {'1', Coord{0, 1}},
    {'2', Coord{-1, 0}},
    {'3', Coord{0, -1}},
-};
-
-
-using Interval = boost::icl::interval<int>::type;
-
-template <>
-struct fmt::formatter<Interval>
-{
-   template <typename ParseContext>
-   constexpr auto parse(ParseContext& ctx)
-   {
-      return ctx.begin();
-   }
-
-   template <typename FormatContext>
-   auto format(Interval const& interval, FormatContext& ctx)
-   {
-      interval.bounds().left();
-      return fmt::format_to(ctx.out(), "{2}{0},{1}{3}", interval.lower(), interval.upper(),
-                            interval.bounds().bits() & 1 ? '[' : ']',
-                            interval.bounds().bits() & 2 ? ']' : '[');
-   }
 };
 
 int main(int argc, char* argv[])
@@ -73,6 +46,7 @@ int main(int argc, char* argv[])
    //
    // For part B, record map of horizontal lines.
    //
+   using Interval = boost::icl::interval<int>::type;
    std::multimap<long, Interval> lines;
    const boost::regex regexp{R"(([LRUD]) ([0-9]+) \(#([a-zA-Z0-9]{5})([a-zA-Z0-9])\))"};
    for (std::string line; std::getline(file, line);)
@@ -98,38 +72,36 @@ int main(int argc, char* argv[])
    int y0 = lines.begin()->first;
    for (auto [y, interval] : lines)
    {
-      //
-      //  0   ┌─────┐ 
-      //  1   │.....│ 
-      //  2   └─┐...│ ----    Stop at each distinct 'y' that has a different set of active      
+      //      0     6
+      //  0   ┌─────┐
+      //  1   │.....│ 2x7
+      //  2   └─┐...│ ----    Stop at each distinct 'y' that has a different set of active
       //  3   ..│...│         horizontal lines. Compute size of rectangles covered by delta-y
-      //  4   ..│...│         and active horizontal lines.
+      //  4   ..│...│ 3x5     and active horizontal lines.
       //  5   ┌─┘.┌─┘ ----
-      //  6   │...│..
+      //  6   │...│.. 2x5
       //  7   └┐..└─┐ ----
-      //  8   .│....│
+      //  8   .│....│ 3x6     Intermediate result: 57
       //  9   .└────┘
-      // 
+      //
       if (y != y0)
       {
-         for (auto i : active)
-            B += (y - y0) * (i.upper() - i.lower() + 1);
+         B += accumulate(active | transform([&](auto i) { return (y - y0) * length(i); }), 0L);
 
          //
          //      ┌─────┐
-         //      │.....│ 
-         // 2 >> └─┐...│    Each time we remove something from the 'active' intervals,     
+         //      │.....│
+         // 2 >> └─┐...│    Each time we remove something from the 'active' intervals,
          //      ..│...│    we have to count those blocks extra that have been removed.
          //      ..│...│
          //      ┌─┘.┌─┘ << 2
          //      │...│..
          // 1 >> └┐..└─┐
          //      .│....│
-         //      .└────┘
-         // 
+         //      .└────┘   Final result: 57 + 5 = 62
+         //
          B += length(last - active);
          last = active;
-
          y0 = y;
       }
 
