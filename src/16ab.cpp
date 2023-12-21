@@ -1,17 +1,8 @@
 //
 // https://adventofcode.com/2023/day/16
 //
-#include <set>
-#include <string>
-using namespace std::literals;
-
-#include <range/v3/algorithm/all_of.hpp>
 #include <range/v3/range/conversion.hpp>
-#include <range/v3/view/drop.hpp>
-#include <range/v3/view/iota.hpp>
-#include <range/v3/view/istream.hpp>
 #include <range/v3/view/transform.hpp>
-#include <range/v3/view/zip.hpp>
 using namespace ranges;
 using namespace ranges::views;
 
@@ -36,8 +27,6 @@ struct Tile
    bool visited = false;
 };
 
-const std::array<Coord, 4> AROUND = {{{-1, 0}, {0, -1}, {1, 0}, {0, 1}}};
-
 struct Map
 {
    explicit Map(std::ifstream file)
@@ -50,8 +39,6 @@ struct Map
    }
 
    std::vector<std::vector<Tile>> map;
-   Coord start;
-
    int width() const { return map[0].size(); }
    int height() const { return map.size(); }
 
