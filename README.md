@@ -163,9 +163,22 @@ Part II made this unfeasible, by sheer size of of the map. Instead,  all horionz
 ```c++
    using Interval = boost::icl::interval<long>::type;
    std::multimap<long, Interval> lines;
+
+   //      0     6
+   //  0   ┌─────┐
+   //  1   │.....│ 2x7
+   //  2   └─┐...│ ----    Stop at each distinct 'y' that has a different set of active
+   //  3   ..│...│         horizontal lines. Compute size of rectangles covered by delta-y
+   //  4   ..│...│ 3x5     and active horizontal lines.
+   //  5   ┌─┘.┌─┘ ----
+   //  6   │...│.. 2x5
+   //  7   └┐..└─┐ ----
+   //  8   .│....│ 3x6     Intermediate result: 57
+   //  9   .└────┘
+   //
 ```
 
-This requires managing a set of intervals efficently. I did implement such a container myself years ago at work, but wanted to use an existing solution, and found [Boost.Icl](https://www.boost.org/doc/libs/1_84_0/libs/icl/doc/html/index.html). Great stuff!
+This requires managing a set of intervals efficently. I didn't want to implement such a container again (having done that at work years ago). Instead I found the [Boost Interval Container Library (ICL)](https://www.boost.org/doc/libs/1_84_0/libs/icl/doc/html/index.html). Great stuff!
 
 To compute the rectangules, or the the difference of two sets of segements, just do:
 ```c++
